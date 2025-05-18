@@ -7,6 +7,7 @@ import { dynFetcher } from './fetchers/dynFetcher';
 import { normalize } from './parsers/normalize';
 import { scoreArticles } from './scoreArticles';
 import { markSeen } from '../db/seenStore';
+import { hasSent, markSent, loadVectorsForSource, isNearDup } from '../db/sentStore';
 import { ensureEmbeddings } from './ensureEmbedding';
 import { stripEmbedding } from './utils/strip';
 
@@ -90,11 +91,25 @@ const selectFetcher = (type: Source['type']) => ({
   console.log(`Scoring ${READY.length} articles with OpenAI embeddings`);
   await scoreArticles(READY);
   
-  // ---- Rank & keep top-50 ----
-  READY.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));   // descending
-  const keep = READY.slice(0, 50);                         // highest 50
+  // Remove anything we already delivered
+  const fresh = READY.filter(a => {
+    // Skip if already sent
+    if (hasSent(a.sourceId, a.id)) return false;
+    
+    // Skip if similar to previously sent articles (optional similarity de-dup)
+    if (a.embedding) {
+      const prevVectors = loadVectorsForSource(a.sourceId);
+      if (isNearDup(a.embedding, prevVectors)) return false;
+    }
+    
+    return true;
+  });
   
-  console.log(`✅ Selected top ${keep.length} articles by relevance`);
+  // ---- Rank & keep top-50 ----
+  fresh.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));   // descending
+  const keep = fresh.slice(0, 50);                         // highest 50
+  
+  console.log(`✅ Selected top ${keep.length} articles by relevance (${READY.length - fresh.length} skipped as already delivered)`);
 
   const stamp = dayjs().format('YYYY-MM-DD-HHmm');
 
@@ -112,10 +127,11 @@ const selectFetcher = (type: Source['type']) => ({
   
   console.log(`✅  Saved ${keep.length} stripped articles to data/clean/${stamp}.jsonl`);
   
-  // Mark all kept articles as seen
+  // Mark all kept articles as seen and sent
   for (const article of keep) {
     markSeen(article);
+    markSent(article);
   }
   
-  console.log(`✅  Marked ${keep.length} articles as seen`);
+  console.log(`✅  Sent ${keep.length} new articles (${READY.length - fresh.length} skipped as already delivered)`);
 })();
