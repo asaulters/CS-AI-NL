@@ -1,0 +1,12 @@
+# Ignore data files
+data/clean/
+data/raw/
+
+# Environment variables
+.env
+
+# OS files
+.DS_Store
+
+# Node modules
+node_modules/

@@ -1,0 +1,20 @@
+{
+	"devDependencies": {
+		"@types/node": "^22.15.18",
+		"nodemon": "^3.1.10",
+		"ts-node": "^10.9.2",
+		"typescript": "^5.8.3"
+	},
+	"dependencies": {
+		"@langchain/openai": "^0.5.10",
+		"axios": "^1.9.0",
+		"cheerio": "^1.0.0",
+		"dayjs": "^1.11.13",
+		"dotenv": "^16.5.0",
+		"langchain": "^0.3.25",
+		"openai": "^4.98.0",
+		"playwright": "^1.52.0",
+		"rss-parser": "^3.13.0",
+		"striptags": "^3.2.0"
+	}
+}
