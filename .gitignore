@@ -1,6 +1,8 @@
 # Ignore data files
 data/clean/
 data/raw/
+data/seen/
+data/sent/
 
 # Environment variables
 .env
